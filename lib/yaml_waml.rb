@@ -6,20 +6,30 @@ class String
   end
 end
 
+module YamlWaml
+  module Util
+    def convert_chars! target
+      splitter = /\\x/
+      target.gsub!(/(?:\\x(\w{2})){0,100}/) do |s|
+        s.split(splitter).map {|i| (i.nil? || i == "" ) ? nil : i.to_i(16) }.compact.pack('C*').gsub("\0", '')
+      end
+    end
+
+    module_function :convert_chars!
+  end
+end
+
 ObjectSpace.each_object(Class) do |klass|
   klass.class_eval do
     if method_defined?(:to_yaml) && !method_defined?(:to_yaml_with_decode)
       def to_yaml_with_decode(*args)
         result = to_yaml_without_decode(*args)
         if result.kind_of? String
-          # decode to workaround
-          result.gsub(/\\x(\w{2})/){
-            [Regexp.last_match.captures.first.to_i(16)].pack("C")}
+          ::YamlWaml::Util.convert_chars!(result)
         elsif result.kind_of? StringIO
           str = result.string
-          # decode to workaround
-          str.gsub!(/\\x(\w{2})/){
-            [Regexp.last_match.captures.first.to_i(16)].pack("C")}
+          str = ::YamlWaml::Util.convert_chars!(str)
+
           result.rewind
           result.write str
           result
@@ -32,3 +42,4 @@ ObjectSpace.each_object(Class) do |klass|
     end
   end
 end
+
