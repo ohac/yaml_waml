@@ -33,3 +33,4 @@ ObjectSpace.each_object(Class) do |klass|
     end
   end
 end
+
