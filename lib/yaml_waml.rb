@@ -8,10 +8,12 @@ end
 
 module YamlWaml
   module Util
+    CODE_SEQUENCE = /(?:\\x(\w{2})){0,100}/
+    CODE_SPLITTER = /\\x/
+
     def convert_chars! target
-      splitter = /\\x/
-      target.gsub!(/(?:\\x(\w{2})){0,100}/) do |s|
-        s.split(splitter).map {|i| (i.nil? || i == "" ) ? nil : i.to_i(16) }.compact.pack('C*').gsub("\0", '')
+      target.gsub!(CODE_SEQUENCE) do |s|
+        s.split(CODE_SPLITTER).map {|i| (i.nil? || i == "" ) ? nil : i.to_i(16) }.compact.pack('C*')
       end
     end
 
