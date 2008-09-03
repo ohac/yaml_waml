@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 require "yaml"
 
 class String
@@ -19,7 +20,9 @@ ObjectSpace.each_object(Class) do |klass|
               else
                 return orig_yamled
               end
-        yamled_str.gsub!(/\\x(\w{2})/){[$1].pack("H2")}
+        if yamled_str.respond_to? :gsub!
+          yamled_str.gsub!(/(?:\\x(\w{2})){1,100}/) {|s| [ s.split(/\\x/).join ].pack('H*') }
+        end
         return yamled_str
       end
       alias_method :to_yaml_without_decode, :to_yaml
