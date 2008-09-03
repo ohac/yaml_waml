@@ -41,11 +41,24 @@ describe YAML, "#to_yaml" do
 end
 
 describe YAML, ".dump" do
-  describe "w/ Japanese text" do
-    it "should output yaml string" do
-      YAML.dump("あ").should == <<-EXPECTED
+  it "should output yaml string" do
+    YAML.dump("あ").should == <<-EXPECTED
 --- "あ"
-      EXPECTED
-    end
+    EXPECTED
+  end
+
+  it "should be StringIO-friendly" do
+    actual = [["あ", "い"], {"う" => ["え"]}, Struct.new(:name).new("お")]
+    io = StringIO.new
+    YAML.dump(actual, io)
+    io.string.should be_eql <<-EXPECTED
+---#{BLANK}
+- - "あ"
+  - "い"
+- "う":#{BLANK}
+  - "え"
+- !ruby/struct:#{BLANK}
+  name: "お"
+    EXPECTED
   end
 end
