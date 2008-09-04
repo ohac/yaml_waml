@@ -51,7 +51,7 @@ describe YAML, ".dump" do
     actual = [["あ", "い"], {"う" => ["え"]}, Struct.new(:name).new("お")]
     io = StringIO.new
     YAML.dump(actual, io)
-    io.string.should be_eql <<-EXPECTED
+    io.string.should be_eql(<<-EXPECTED)
 ---#{BLANK}
 - - "あ"
   - "い"
