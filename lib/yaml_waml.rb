@@ -15,7 +15,7 @@ module YamlWaml
                  else return orig_yamled
                  end
 
-    yamled_str.gsub!(/(?:\\x(\w{2})){1,100}/) {|s| [ s.split(/\\x/).join ].pack('H*') }
+    yamled_str.gsub!(/(?:\\x([0-9a-fA-F]{2})){1,100}/) {|s| [ s.split(/\\x/).join ].pack('H*') }
     return yamled_str
   end
   module_function :decode
