@@ -19,16 +19,49 @@ module YamlWaml
     return yamled_str
   end
   module_function :decode
+
+  class FakeIO
+    attr_accessor :real_io
+
+    def initialize real_io
+      @real_io = real_io
+    end
+
+    def class
+      IO
+    end
+
+    def write(str)
+      @real_io.write YamlWaml.decode(str)
+    end
+
+    alias << write
+
+    def method_missing *args, &block
+      @real_io.__send__ *args, &block
+    end
+
+  end
+
 end
 
 ObjectSpace.each_object(Class) do |klass|
   klass.class_eval do
     if method_defined?(:to_yaml) && !method_defined?(:to_yaml_with_decode)
-      def to_yaml_with_decode(*args)
-        io = args.shift if IO === args.first
-        yamled_str = YamlWaml.decode(to_yaml_without_decode(*args))
-        io.write(yamled_str) if io
-        return yamled_str
+      def to_yaml_with_decode(io = StringIO.new )
+        require 'pp'
+        # pp caller(0)
+        if io && io.kind_of?(IO)
+          fake_io = YamlWaml::FakeIO.new(io)
+          io = fake_io
+        end
+        result_io = to_yaml_without_decode(io)
+        case result_io
+        when StringIO
+          return ::YamlWaml.decode(result_io.string)
+        else
+          return result_io
+        end
       end
       alias_method :to_yaml_without_decode, :to_yaml
       alias_method :to_yaml, :to_yaml_with_decode
