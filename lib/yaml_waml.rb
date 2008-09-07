@@ -27,10 +27,6 @@ module YamlWaml
       @real_io = real_io
     end
 
-    def class
-      IO
-    end
-
     def write(str)
       @real_io.write YamlWaml.decode(str)
     end
@@ -48,17 +44,22 @@ end
 ObjectSpace.each_object(Class) do |klass|
   klass.class_eval do
     if method_defined?(:to_yaml) && !method_defined?(:to_yaml_with_decode)
-      def to_yaml_with_decode(io = StringIO.new )
-        if io && io.kind_of?(IO)
-          fake_io = YamlWaml::FakeIO.new(io)
-          io = fake_io
+      def to_yaml_with_decode(opts = {} )
+        case opts
+        when Hash
+          opts = ::YAML.emitter.reset(opts)
+        when IO
+          fake_io = ::YamlWaml::FakeIO.new(opts)
+          opts = fake_io
         end
-        result_io = to_yaml_without_decode(io)
+        result_io = to_yaml_without_decode(opts)
         case result_io
-        when StringIO
+        when ::StringIO
           return ::YamlWaml.decode(result_io.string)
-        else
+        when ::YamlWaml::FakeIO, ::IO
           return result_io
+        else
+          return YamlWaml.decode(result_io)
         end
       end
       alias_method :to_yaml_without_decode, :to_yaml
