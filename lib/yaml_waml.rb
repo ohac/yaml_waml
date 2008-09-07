@@ -49,8 +49,6 @@ ObjectSpace.each_object(Class) do |klass|
   klass.class_eval do
     if method_defined?(:to_yaml) && !method_defined?(:to_yaml_with_decode)
       def to_yaml_with_decode(io = StringIO.new )
-        require 'pp'
-        # pp caller(0)
         if io && io.kind_of?(IO)
           fake_io = YamlWaml::FakeIO.new(io)
           io = fake_io
