@@ -66,6 +66,12 @@ Benchmark.bm do |x|
     }
   }
 
+  x.report('packing multi chars with H*') {
+    yaml_str.gsub(/(?:\\x(\w{2})){0,100}/) {|s|
+      [ s.split(/\\x/).join ].pack('H*')
+    }
+  }
+
 end
 
 # result on my environment( MacBook Pro Intel Core Duo 2.5 GHz, 4GB), result is like that
@@ -77,3 +83,14 @@ end
 # with memoize and $1    0.780000   0.010000   0.790000 (  0.973506)
 # with symbol table      0.770000   0.010000   0.780000 (  1.102112)
 # packing  multi chars   0.740000   0.010000   0.750000 (  0.908722)
+
+# result on walf43's environment( MacBook1.1 Intel Core Duo 1.83 GHz, 2GB), result is like that
+#                         user     system      total        real
+# original yaml_waml            2.670000   0.030000   2.700000 (  2.756841)
+# using $1  2.050000            0.010000   2.060000 (  2.079539)
+# using $1 w/ H2                1.800000   0.020000   1.820000 (  1.849095)
+# with memoize                  1.110000   0.010000   1.120000 (  1.145967)
+# with memoize and $1           1.160000   0.020000   1.180000 (  1.199560)
+# with symbol table             1.060000   0.010000   1.070000 (  1.093012)
+# packing  multi chars          1.050000   0.010000   1.060000 (  1.117803)
+# packing multi chars with H*   0.590000   0.010000   0.600000 (  0.628510)

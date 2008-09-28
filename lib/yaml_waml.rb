@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 require "yaml"
 
 class String
@@ -13,20 +14,52 @@ module YamlWaml
                  when StringIO then orig_yamled.string
                  else return orig_yamled
                  end
-    yamled_str.gsub!(/\\x(\w{2})/){[$1].pack("H2")}
+    yamled_str.gsub!(/(?:\\x([0-9a-fA-F]{2})){1,100}/) {|s| [ s.split(/\\x/).join ].pack('H*') }
     return yamled_str
   end
   module_function :decode
+
+  class FakeIO
+    attr_accessor :real_io
+
+    def initialize real_io
+      @real_io = real_io
+    end
+
+    def write(str)
+      @real_io.write YamlWaml.decode(str)
+    end
+
+    alias << write
+
+    def method_missing *args, &block
+      @real_io.__send__ *args, &block
+    end
+
+  end
+
 end
 
 ObjectSpace.each_object(Class) do |klass|
   klass.class_eval do
     if method_defined?(:to_yaml) && !method_defined?(:to_yaml_with_decode)
-      def to_yaml_with_decode(*args)
-        io = args.shift if IO === args.first
-        yamled_str = YamlWaml.decode(to_yaml_without_decode(*args))
-        io.write(yamled_str) if io
-        return yamled_str
+      def to_yaml_with_decode(opts = {} )
+        case opts
+        when Hash
+          opts = ::YAML.emitter.reset(opts)
+        when IO
+          fake_io = ::YamlWaml::FakeIO.new(opts)
+          opts = fake_io
+        end
+        result_io = to_yaml_without_decode(opts)
+        case result_io
+        when ::StringIO
+          return ::YamlWaml.decode(result_io.string)
+        when ::YamlWaml::FakeIO, ::IO
+          return result_io
+        else
+          return YamlWaml.decode(result_io)
+        end
       end
       alias_method :to_yaml_without_decode, :to_yaml
       alias_method :to_yaml, :to_yaml_with_decode
